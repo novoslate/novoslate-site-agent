@@ -2,23 +2,23 @@
 /**
  * Plugin Name:       Novoslate Site Agent
  * Description:       Reports WordPress health (pending updates, versions) to Novoslate Ops once a day.
- * Version:           1.1.0
+ * Version:           1.1.1
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Novoslate
  * Author URI:        https://novoslate.com
  * License:           GPL-2.0-or-later
- * Update URI:        https://github.com/peterg23/novoslate-site-agent
+ * Update URI:        https://github.com/novoslate/novoslate-site-agent
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NSA_VERSION', '1.1.0' );
+define( 'NSA_VERSION', '1.1.1' );
 define( 'NSA_PATH', plugin_dir_path( __FILE__ ) );
 if ( ! defined( 'NSA_GITHUB_REPO' ) ) {
-	define( 'NSA_GITHUB_REPO', 'https://github.com/peterg23/novoslate-site-agent/' );
+	define( 'NSA_GITHUB_REPO', 'https://github.com/novoslate/novoslate-site-agent/' );
 }
 define( 'NSA_DEFAULT_ENDPOINT', 'https://ops.novoslate.com/api/agent/report' );
 

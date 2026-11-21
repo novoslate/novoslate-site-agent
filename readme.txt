@@ -2,7 +2,7 @@
 Contributors: novoslate
 Requires at least: 5.8
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 
 Reports WordPress health (pending updates, versions) to Novoslate Ops once a day.
@@ -19,6 +19,9 @@ Runs alongside ManageWP. Once a day it sends Novoslate Ops the pending core, plu
 Updates arrive from GitHub releases like any other plugin update.
 
 == Changelog ==
+
+= 1.1.1 =
+* Updates now come from the novoslate GitHub organization.
 = 1.1.0 =
 * Updates itself from GitHub releases.
 * Endpoint defaults to ops.novoslate.com, so only the token is needed.
