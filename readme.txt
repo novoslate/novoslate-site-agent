@@ -22,6 +22,7 @@ Updates arrive from GitHub releases like any other plugin update.
 
 = 1.1.1 =
 * Updates now come from the novoslate GitHub organization.
+
 = 1.1.0 =
 * Updates itself from GitHub releases.
 * Endpoint defaults to ops.novoslate.com, so only the token is needed.
