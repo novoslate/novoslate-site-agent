@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       Novoslate Site Agent
- * Description:       Reports WordPress health (pending updates, versions) to Novoslate Ops once a day.
- * Version:           1.1.1
+ * Description:       Reports WordPress health (pending updates, versions) to Novoslate Ops once a day, and sends form leads to Ops when Capture form leads is on for the client.
+ * Version:           1.2.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Novoslate
@@ -15,12 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NSA_VERSION', '1.1.1' );
+define( 'NSA_VERSION', '1.2.0' );
 define( 'NSA_PATH', plugin_dir_path( __FILE__ ) );
 if ( ! defined( 'NSA_GITHUB_REPO' ) ) {
 	define( 'NSA_GITHUB_REPO', 'https://github.com/novoslate/novoslate-site-agent/' );
 }
 define( 'NSA_DEFAULT_ENDPOINT', 'https://ops.novoslate.com/api/agent/report' );
+require_once NSA_PATH . 'includes/class-nsa-leads.php';
 
 // Updates from GitHub releases (same setup as Project Estimator).
 require_once NSA_PATH . 'lib/plugin-update-checker/plugin-update-checker.php';
@@ -55,6 +56,13 @@ final class Novoslate_Site_Agent {
 
 	public static function deactivate() {
 		wp_clear_scheduled_hook( self::HOOK );
+		NSA_Leads::deactivate();
+	}
+
+	/** The Site Agent token, also used to send form leads. */
+	public static function token() {
+		$o = self::opts();
+		return (string) $o['token'];
 	}
 
 	private static function opts() {
@@ -122,6 +130,8 @@ final class Novoslate_Site_Agent {
 			'theme_updates'  => $theme_updates,
 			'plugins_active' => count( (array) get_option( 'active_plugins', array() ) ),
 			'agent_version'  => self::VERSION,
+			'form_plugins'   => NSA_Leads::form_plugins(),
+			'lead_capture'   => NSA_Leads::stats(),
 		);
 	}
 
@@ -148,6 +158,11 @@ final class Novoslate_Site_Agent {
 			$msg = 'HTTP ' . wp_remote_retrieve_response_code( $res );
 		} else {
 			$msg = true;
+			// Ops says whether to capture form leads and where to send them (the toggle on the client page).
+			$body = json_decode( wp_remote_retrieve_body( $res ), true );
+			if ( is_array( $body ) && isset( $body['lead_capture'] ) ) {
+				NSA_Leads::apply_setting( $body['lead_capture'] );
+			}
 		}
 		update_option( self::OPT . '_last', array( 'time' => time(), 'result' => true === $msg ? 'ok' : $msg ), false );
 		return $msg;
@@ -189,7 +204,7 @@ final class Novoslate_Site_Agent {
 		?>
 		<div class="wrap">
 			<h1>Novoslate Site Agent</h1>
-			<p>Sends pending updates and version info to Novoslate Ops once a day. Version <?php echo esc_html( NSA_VERSION ); ?>, updates itself from GitHub.</p>
+			<p>Sends pending updates and version info to Novoslate Ops once a day, and form leads when Capture form leads is on in Ops. Version <?php echo esc_html( NSA_VERSION ); ?>, updates itself from GitHub.</p>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'novoslate_agent' ); ?>
 				<table class="form-table">
@@ -205,6 +220,12 @@ final class Novoslate_Site_Agent {
 				<?php wp_nonce_field( 'novoslate_agent_send' ); ?>
 				<?php submit_button( 'Send report now', 'secondary', 'submit', false ); ?>
 			</form>
+			<?php $lc = NSA_Leads::stats(); ?>
+			<p><strong>Form lead capture:</strong> <?php echo $lc['on'] ? 'On' : 'Off'; ?> (set per client in Novoslate Ops, read with each report).
+				<?php if ( $lc['on'] || $lc['sent_7d'] || $lc['failed_7d'] ) : ?>
+					Last 7 days: <?php echo (int) $lc['sent_7d']; ?> sent, <?php echo (int) $lc['queued']; ?> queued, <?php echo (int) $lc['failed_7d']; ?> failed<?php echo $lc['last_error'] ? '. Last error: ' . esc_html( $lc['last_error'] ) : ''; ?>.
+				<?php endif; ?>
+				Form plugins: <?php echo esc_html( implode( ', ', NSA_Leads::form_plugins() ) ? implode( ', ', NSA_Leads::form_plugins() ) : 'none found' ); ?>.</p>
 			<?php if ( $last ) : ?>
 				<p><strong>Last report:</strong> <?php echo esc_html( wp_date( 'M j, Y g:i a', $last['time'] ) ); ?>,
 					<?php echo 'ok' === $last['result'] ? '<span style="color:#16a34a">delivered</span>' : '<span style="color:#dc2626">' . esc_html( $last['result'] ) . '</span>'; ?></p>
@@ -217,3 +238,4 @@ final class Novoslate_Site_Agent {
 register_activation_hook( __FILE__, array( 'Novoslate_Site_Agent', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'Novoslate_Site_Agent', 'deactivate' ) );
 Novoslate_Site_Agent::init();
+NSA_Leads::init();
