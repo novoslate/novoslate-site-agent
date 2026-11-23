@@ -316,10 +316,14 @@ final class NSA_Leads {
 		}
 	}
 
-	/** Elementor Pro forms: new_record fires after validation (honeypot, reCAPTCHA) and the form's actions. */
+	/**
+	 * Elementor Pro forms: new_record fires only after validation passed (required fields, honeypot, reCAPTCHA, Akismet
+	 * all stop the request before it), and after the form's actions ran. A failed action (the form's email, a webhook)
+	 * sets is_success to false but the submission is still a real lead, so only field errors skip it.
+	 */
 	public static function on_elementor( $record, $handler ) {
 		try {
-			if ( is_object( $handler ) && ( ! empty( $handler->errors ) || ( isset( $handler->is_success ) && ! $handler->is_success ) ) ) {
+			if ( is_object( $handler ) && ! empty( $handler->errors ) ) {
 				return;
 			}
 			$fields = array();

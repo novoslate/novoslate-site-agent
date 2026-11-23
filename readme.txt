@@ -2,7 +2,7 @@
 Contributors: novoslate
 Requires at least: 5.8
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 
 Reports WordPress health (pending updates, versions) to Novoslate Ops once a day, and sends form leads when Capture form leads is on.
@@ -21,6 +21,9 @@ Form lead capture is off until "Capture form leads" is turned on for the client 
 Updates arrive from GitHub releases like any other plugin update.
 
 == Changelog ==
+
+= 1.2.1 =
+* Elementor Pro: a form submission is captured even when the form's own email or another action fails (validation and spam checks still apply).
 
 = 1.2.0 =
 * Form lead capture for Elementor Pro, Divi, Contact Form 7 and Gravity Forms, switched on per client from Novoslate Ops.

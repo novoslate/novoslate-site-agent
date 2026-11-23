@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Novoslate Site Agent
  * Description:       Reports WordPress health (pending updates, versions) to Novoslate Ops once a day, and sends form leads to Ops when Capture form leads is on for the client.
- * Version:           1.2.0
+ * Version:           1.2.1
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Novoslate
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'NSA_VERSION', '1.2.0' );
+define( 'NSA_VERSION', '1.2.1' );
 define( 'NSA_PATH', plugin_dir_path( __FILE__ ) );
 if ( ! defined( 'NSA_GITHUB_REPO' ) ) {
 	define( 'NSA_GITHUB_REPO', 'https://github.com/novoslate/novoslate-site-agent/' );
