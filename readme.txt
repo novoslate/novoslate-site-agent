@@ -2,7 +2,7 @@
 Contributors: novoslate
 Requires at least: 5.8
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 
 Reports WordPress health (pending updates, versions) to Novoslate Ops once a day, and sends form leads when Capture form leads is on.
@@ -21,6 +21,9 @@ Form lead capture is off until "Capture form leads" is turned on for the client 
 Updates arrive from GitHub releases like any other plugin update.
 
 == Changelog ==
+
+= 1.2.2 =
+* Test leads: visit any page with ?nsa_test=1 (a session cookie, ?nsa_test=0 clears it) and form leads from that visit are sent marked test, so Ops leaves them out of counts.
 
 = 1.2.1 =
 * Elementor Pro: a form submission is captured even when the form's own email or another action fails (validation and spam checks still apply).

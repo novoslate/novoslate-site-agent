@@ -13,6 +13,7 @@
  *
  * Attribution: a small script stores gclid, gbraid, wbraid, UTMs, landing page and referrer in a first-party cookie
  * (nsa_attr, 90 days): first touch, plus the last Google click. It only loads while capture is on. No other tracking.
+ * ?nsa_test=1 on any page sets a session cookie (nsa_test) so that visit's leads are sent marked test; ?nsa_test=0 clears it.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -77,7 +78,7 @@ final class NSA_Leads {
 		$keys = wp_json_encode( self::KEYS );
 		// First touch (f): landing page, outside referrer and any ad params of the first visit. Last Google click (l):
 		// updated on every visit that carries gclid, gbraid or wbraid. Path only, never the query string.
-		echo "<script id=\"nsa-attr\">(function(){try{var K='nsa_attr',q=new URLSearchParams(location.search),ks=" . $keys . ",c=null,m=document.cookie.match(/(?:^|; )nsa_attr=([^;]*)/);if(m){try{c=JSON.parse(decodeURIComponent(m[1]))}catch(e){c=null}}var t=Math.floor(Date.now()/1000),h={},ad=false,ch=false,lp=(location.origin+location.pathname).slice(0,300),r=document.referrer&&document.referrer.indexOf(location.host)<0?document.referrer.split('?')[0].slice(0,300):'';ks.forEach(function(k){var v=q.get(k);if(v){h[k]=v.slice(0,200);if(k==='gclid'||k==='gbraid'||k==='wbraid')ad=true}});if(!c||!c.f){c={f:{lp:lp,ref:r,t:t}};for(var k in h)c.f[k]=h[k];ch=true}if(ad){c.l={lp:lp,t:t};['gclid','gbraid','wbraid'].forEach(function(k){if(h[k])c.l[k]=h[k]});ch=true}if(ch){document.cookie=K+'='+encodeURIComponent(JSON.stringify(c))+'; path=/; max-age='+(90*86400)+'; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'')}}catch(e){}})();</script>\n"; // phpcs:ignore WordPress.Security.EscapeOutput
+		echo "<script id=\"nsa-attr\">(function(){try{var K='nsa_attr',q=new URLSearchParams(location.search),x=q.get('nsa_test'),sc=location.protocol==='https:'?'; Secure':'';if(x==='1'){document.cookie='nsa_test=1; path=/; SameSite=Lax'+sc}else if(x==='0'){document.cookie='nsa_test=; path=/; max-age=0; SameSite=Lax'+sc}var ks=" . $keys . ",c=null,m=document.cookie.match(/(?:^|; )nsa_attr=([^;]*)/);if(m){try{c=JSON.parse(decodeURIComponent(m[1]))}catch(e){c=null}}var t=Math.floor(Date.now()/1000),h={},ad=false,ch=false,lp=(location.origin+location.pathname).slice(0,300),r=document.referrer&&document.referrer.indexOf(location.host)<0?document.referrer.split('?')[0].slice(0,300):'';ks.forEach(function(k){var v=q.get(k);if(v){h[k]=v.slice(0,200);if(k==='gclid'||k==='gbraid'||k==='wbraid')ad=true}});if(!c||!c.f){c={f:{lp:lp,ref:r,t:t}};for(var k in h)c.f[k]=h[k];ch=true}if(ad){c.l={lp:lp,t:t};['gclid','gbraid','wbraid'].forEach(function(k){if(h[k])c.l[k]=h[k]});ch=true}if(ch){document.cookie=K+'='+encodeURIComponent(JSON.stringify(c))+'; path=/; max-age='+(90*86400)+'; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'')}}catch(e){}})();</script>\n"; // phpcs:ignore WordPress.Security.EscapeOutput
 	}
 
 	/** Attribution from the cookie, for the payload. Google click ids come from the last Google click when there is one. */
@@ -198,6 +199,30 @@ final class NSA_Leads {
 		);
 	}
 
+	/**
+	 * A test submission: the session cookie set by visiting any page with ?nsa_test=1, nsa_test=1 in the form page or
+	 * referrer URL, or the NSA_LEADS_TEST constant. Ops then stores the lead as test and leaves it out of every count.
+	 */
+	public static function is_test( $page ) {
+		if ( defined( 'NSA_LEADS_TEST' ) && NSA_LEADS_TEST ) {
+			return true;
+		}
+		if ( isset( $_COOKIE['nsa_test'] ) && '1' === (string) wp_unslash( $_COOKIE['nsa_test'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+			return true;
+		}
+		$ref = isset( $_SERVER['HTTP_REFERER'] ) ? (string) wp_unslash( $_SERVER['HTTP_REFERER'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+		foreach ( array( (string) $page, $ref ) as $u ) {
+			$qs = (string) wp_parse_url( $u, PHP_URL_QUERY );
+			if ( '' !== $qs ) {
+				parse_str( $qs, $p );
+				if ( isset( $p['nsa_test'] ) && '1' === (string) $p['nsa_test'] ) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	private static function page_url( $url ) {
 		$url = (string) $url;
 		$q   = strpos( $url, '?' );
@@ -246,7 +271,7 @@ final class NSA_Leads {
 				'attribution'   => self::attribution(),
 				'site'          => home_url( '/' ),
 				'agent_version' => NSA_VERSION,
-				'test'          => defined( 'NSA_LEADS_TEST' ) && NSA_LEADS_TEST,
+				'test'          => self::is_test( $page ),
 			);
 			wp_schedule_single_event( time(), self::CRON, array( $sid, $payload, 0 ) );
 		} catch ( \Throwable $e ) {
